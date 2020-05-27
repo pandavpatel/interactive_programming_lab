@@ -23,8 +23,14 @@ class ChallengeDetails(APIView):
 
     def post(self, request):
         data=request.data
+        # making dictionary mutable to do some changes
         data._mutable = True
+        # pop csrfmiddlewaretoken because serializer only need required data to store
         data.pop('csrfmiddlewaretoken')
+        # create a serializer and check if it is valid or not
+        # if serializer is valid then save it
+        # also have to add related details in ChallengeOwner model
+        # so now made another serializer for ChallengeOwner and then did same process to save it
         serializer = ChallengeSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -45,6 +51,10 @@ class ChallengeList(generics.ListAPIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = 'challenge_app/list-challenge.html'
 
+
+    # This mathod is for listing all Challenges own by user
+    # make a list of challenge object own by logged in user
+    # then make serializer for lists of objects
     def list(self, request):
         challenge_owner = ChallengeOwner.objects.all().filter(owner=request.user.id)
         queryset =[]
@@ -59,11 +69,14 @@ class ChallengeEdit(APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = 'challenge_app/edit-challenge.html'
     
+    # geting Challenge object which user want to change
+    # made a serializer for Challenge object and send it to page
     def get(self,request, challenge_id):
         obj=Challenge.objects.all().get(challenge_id=challenge_id)
         serializer=ChallengeSerializer(obj)
         return Response({'serializer':serializer})
 
+    # updating a Challenge object
     def post(self,request, challenge_id):
         data=request.data
         data._mutable = True
