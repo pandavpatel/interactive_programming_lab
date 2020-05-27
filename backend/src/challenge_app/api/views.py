@@ -4,7 +4,8 @@ from challenge_app.api.serializers import ChallengeOwnerSerializer,ChallengeSeri
 from challenge_app.forms import ChallengeForm,TestCaseForm
 from challenge_app.models import Challenge,ChallengeOwner,TestCase
 import json
-from django.contrib.auth.models import User
+from auth_app.models import User
+# from django.contrib.auth.models import User
 from rest_framework.response import Response
 from django.urls import reverse
 from rest_framework.renderers import TemplateHTMLRenderer
@@ -18,10 +19,19 @@ class ChallengeDetails(APIView):
     template_name = 'challenge_app/add-challenge.html'
 
     def get(self, request):
-        serializer = ChallengeSerializer()
-        return Response({'serializer': serializer})
+        # check for permission
+        if User.objects.all().get(id=request.user.id).is_teacher :
+            serializer = ChallengeSerializer()
+            return Response({'serializer': serializer})
+        
+        else:
+            return JsonResponse({'message': 'This is Forbidden'}, status=403)
 
     def post(self, request):
+        # check for permission
+        if User.objects.all().get(id=request.user.id).is_teacher is False :
+            return JsonResponse({'message': 'This is Forbidden'}, status=403)
+        
         data=request.data
         # making dictionary mutable to do some changes
         data._mutable = True
@@ -56,7 +66,7 @@ class ChallengeList(generics.ListAPIView):
     # make a list of challenge object own by logged in user
     # then make serializer for lists of objects
     def list(self, request):
-        challenge_owner = ChallengeOwner.objects.all().filter(owner=request.user.id)
+        challenge_owner = ChallengeOwner.objects.all()
         queryset =[]
         for owner in challenge_owner:
             queryset.append(owner.challenge_id)
@@ -72,12 +82,25 @@ class ChallengeEdit(APIView):
     # geting Challenge object which user want to change
     # made a serializer for Challenge object and send it to page
     def get(self,request, challenge_id):
+        # check for permission
+        if User.objects.all().get(id=request.user.id).is_teacher is False :
+            return JsonResponse({'message': 'This is Forbidden'}, status=403)
+        # check if it is owner's chellenge or not
+        # if it is then it wil process further
+        # else, it will give Request Forbidden Error
+        if ChallengeOwner.objects().all().get(challenge_id=challenge_id).owner is not request.user:
+            return JsonResponse({'message': 'This is Forbidden'}, status=403)
+        
         obj=Challenge.objects.all().get(challenge_id=challenge_id)
         serializer=ChallengeSerializer(obj)
         return Response({'serializer':serializer})
 
     # updating a Challenge object
     def post(self,request, challenge_id):
+        # check for permission
+        if User.objects.all().get(id=request.user.id).is_teacher is False :
+            return JsonResponse({'message': 'This is Forbidden'}, status=403)
+
         data=request.data
         data._mutable = True
         data.pop('csrfmiddlewaretoken')
