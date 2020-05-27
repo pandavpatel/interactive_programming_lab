@@ -1,0 +1,16 @@
+{% load rest_framework %}
+
+<html><body>
+
+<h1>list Challenge</h1>
+
+<form>
+    {% csrf_token %}
+    {% for s in serializer %}
+    <input type="hidden" name="id" id="id" value="{{ s.challenge_id }}" />
+    <a href="{% url 'challenge-edit' s.challenge_id %}"><h5>{{s.title}}</h5></a><br>
+    {% endfor %}
+    {% comment %} <input type="submit" value="Save"> {% endcomment %}
+</form>
+
+</body></html>
